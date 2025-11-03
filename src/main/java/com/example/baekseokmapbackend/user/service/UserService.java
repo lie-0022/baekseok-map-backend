@@ -1,12 +1,10 @@
 package com.example.baekseokmapbackend.user.service;
 
-import com.example.baekseokmapbackend.security.JwtTokenProvider; // 1. JwtTokenProvider 임포트
-import com.example.baekseokmapbackend.user.domain.RefreshToken; // 2. RefreshToken 임포트
+import com.example.baekseokmapbackend.security.JwtTokenProvider;
+import com.example.baekseokmapbackend.user.domain.RefreshToken;
 import com.example.baekseokmapbackend.user.domain.User;
-import com.example.baekseokmapbackend.user.dto.LoginRequest; // 3. LoginRequest 임포트
-import com.example.baekseokmapbackend.user.dto.SignUpRequest;
-import com.example.baekseokmapbackend.user.dto.TokenResponse; // 4. TokenResponse 임포트
-import com.example.baekseokmapbackend.user.repository.RefreshTokenRepository; // 5. RefreshTokenRepository 임포트
+import com.example.baekseokmapbackend.user.dto.*;
+import com.example.baekseokmapbackend.user.repository.RefreshTokenRepository;
 import com.example.baekseokmapbackend.user.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -20,8 +18,8 @@ public class UserService {
 
     private final PasswordEncoder passwordEncoder;
     private final UserRepository userRepository;
-    private final JwtTokenProvider jwtTokenProvider; // 6. 의존성 추가
-    private final RefreshTokenRepository refreshTokenRepository; // 7. 의존성 추가
+    private final JwtTokenProvider jwtTokenProvider;
+    private final RefreshTokenRepository refreshTokenRepository;
 
     /**
      * 회원가입 로직
@@ -52,7 +50,7 @@ public class UserService {
         User user = userRepository.findByStudentId(request.getStudent_id())
                 .orElseThrow(() -> new IllegalArgumentException("가입되지 않은 학번입니다."));
 
-        // 2. 비밀번호 검증 (입력된 비밀번호 vs DB의 암호화된 비밀번호)
+        // 2. 비밀번호 검증
         if (!passwordEncoder.matches(request.getPassword(), user.getPassword())) {
             throw new IllegalArgumentException("비밀번호가 일치하지 않습니다.");
         }
@@ -60,26 +58,63 @@ public class UserService {
         // 3. 토큰 생성
         String accessToken = jwtTokenProvider.createAccessToken(user.getStudentId());
         String refreshTokenString = jwtTokenProvider.createRefreshToken();
+        long refreshTokenValiditySeconds = jwtTokenProvider.getRefreshTokenValidityInSeconds();
 
         // 4. Refresh Token을 DB에 저장
-        // (이미 해당 유저의 토큰이 있다면 업데이트, 없다면 새로 생성)
-        RefreshToken refreshToken = refreshTokenRepository.findByUser(user) // <-- 이 메소드 Repository에 추가 필요!
+        RefreshToken refreshToken = refreshTokenRepository.findByUser(user)
                 .orElse(new RefreshToken(
                         user,
                         refreshTokenString,
-                        jwtTokenProvider.getRefreshTokenValidityInSeconds()
+                        refreshTokenValiditySeconds
                 ));
 
-        // 기존 토큰이 있다면 값만 업데이트
         if (refreshToken.getId() != null) {
             refreshToken.updateToken(
                     refreshTokenString,
-                    jwtTokenProvider.getRefreshTokenValidityInSeconds()
+                    refreshTokenValiditySeconds
             );
         }
 
         refreshTokenRepository.save(refreshToken);
+
         // 5. 토큰 반환
         return new TokenResponse(accessToken, refreshTokenString);
+    }
+
+    /**
+     * 로그아웃 로직
+     */
+    @Transactional
+    public void logout(LogoutRequest request) {
+        // 1. Refresh Token 찾기
+        RefreshToken refreshToken = refreshTokenRepository.findByToken(request.getRefreshToken())
+                .orElseThrow(() -> new IllegalArgumentException("유효하지 않은 리프레시 토큰입니다."));
+
+        // 2. DB에서 해당 토큰 삭제
+        refreshTokenRepository.delete(refreshToken);
+    }
+
+    /**
+     * 토큰 갱신 로직 (Access Token 재발급)
+     */
+    @Transactional(readOnly = true)
+    public AccessTokenResponse reissueToken(RefreshRequest request) {
+        // 1. Refresh Token 유효성 검증 (JWT 자체)
+        if (!jwtTokenProvider.validateToken(request.getRefreshToken())) {
+            throw new IllegalArgumentException("유효하지 않은 리프레시 토큰입니다. (Validation Fail)");
+        }
+
+        // 2. Refresh Token DB에서 찾기
+        RefreshToken refreshToken = refreshTokenRepository.findByToken(request.getRefreshToken())
+                .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 리프레시 토큰입니다. (DB Fail)"));
+
+        // 3. 토큰에 연결된 사용자 정보 가져오기
+        User user = refreshToken.getUser();
+
+        // 4. 새로운 Access Token 생성
+        String newAccessToken = jwtTokenProvider.createAccessToken(user.getStudentId());
+
+        // 5. 새 Access Token 반환
+        return new AccessTokenResponse(newAccessToken);
     }
 }
