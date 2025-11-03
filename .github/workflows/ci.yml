@@ -28,6 +28,7 @@ jobs:
       CI_DB_USER: ${{ secrets.CI_DB_USER }}
       CI_DB_PASSWORD: ${{ secrets.CI_DB_PASSWORD }}
       CI_DB_ROOT_PASSWORD: ${{ secrets.CI_DB_ROOT_PASSWORD }}
+      JWT_SECRET : ${{ secrets.JWT_SECRET }}
 
     steps:
       - uses: actions/checkout@v4
