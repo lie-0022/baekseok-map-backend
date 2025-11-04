@@ -1,5 +1,8 @@
 package com.example.baekseokmapbackend.config;
 
+import com.example.baekseokmapbackend.security.JwtAuthenticationFilter; // 1. 필터 임포트
+import com.example.baekseokmapbackend.security.JwtTokenProvider; // 2. JwtTokenProvider 임포트
+import lombok.RequiredArgsConstructor; // 3. RequiredArgsConstructor 임포트
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
@@ -8,40 +11,40 @@ import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter; // 4. 필터 위치 지정을 위해 임포트
 
 @Configuration
 @EnableWebSecurity
+@RequiredArgsConstructor // 5. final 필드 주입을 위해 추가
 public class SecurityConfig {
 
-    @Bean // 이 메소드가 반환하는 객체를 Spring이 관리하도록 등록
+    private final JwtTokenProvider jwtTokenProvider; // 6. JwtTokenProvider 주입
+    private final JwtAuthenticationFilter jwtAuthenticationFilter; // 7. 우리가 만든 필터 주입
+
+    @Bean
     public PasswordEncoder passwordEncoder() {
-        // BCrypt는 가장 많이 사용되는 강력한 암호화 방식입니다.
         return new BCryptPasswordEncoder();
     }
 
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
         http
-                // 1. CSRF, HTTP Basic, Form Login 비활성화 (JWT 사용을 위함)
                 .csrf(csrf -> csrf.disable())
                 .httpBasic(basic -> basic.disable())
                 .formLogin(form -> form.disable())
-
-                // 2. 세션 정책을 STATELESS로 설정 (JWT는 세션을 사용하지 않음)
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
-
-                // 3. API 경로별 접근 권한 설정
                 .authorizeHttpRequests(authz -> authz
-                        // '/api/auth/**' 경로는 회원가입/로그인이므로 모두 허용
                         .requestMatchers("/api/auth/**").permitAll()
-                        // H2 콘솔 접근 허용 (개발용)
-                        .requestMatchers("/h2-console/**").permitAll()
-                        // 그 외 모든 요청은 인증(로그인)이 필요함
-                        .anyRequest().authenticated()
+                        .requestMatchers("/h2-console/**").permitAll() // H2 콘솔 (만약 dev 프로필에서 쓴다면)
+                        // (팀원이 Docker(MySQL)로 바꿨다면 이 줄은 없어도 무방합니다)
+                        .anyRequest().authenticated() // 그 외 모든 요청은 인증 필요
                 )
-
-                // H2 콘솔은 iframe을 사용하므로 X-Frame-Options 헤더 비활성화
                 .headers(headers -> headers.frameOptions(frame -> frame.disable()));
+
+        // 8. ★★★★★ 가장 중요한 부분 ★★★★★
+        // Spring Security의 기본 인증 필터(UsernamePasswordAuthenticationFilter)가 실행되기 전에,
+        // 우리가 만든 'jwtAuthenticationFilter'를 먼저 실행하도록 순서를 지정합니다.
+        http.addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
 
         return http.build();
     }

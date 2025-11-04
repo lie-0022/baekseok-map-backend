@@ -1,8 +1,7 @@
 package com.example.baekseokmapbackend.user.controller;
 
-import com.example.baekseokmapbackend.user.dto.LoginRequest;
-import com.example.baekseokmapbackend.user.dto.SignUpRequest;
-import com.example.baekseokmapbackend.user.dto.TokenResponse;
+// LogoutRequest, RefreshRequest, AccessTokenResponse를 임포트합니다.
+import com.example.baekseokmapbackend.user.dto.*;
 import com.example.baekseokmapbackend.user.service.UserService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -12,8 +11,8 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-@RestController // 이 클래스가 REST API 컨트롤러임을 알립니다.
-@RequestMapping("/api/auth") // 이 컨트롤러의 모든 메소드는 /api/auth 경로로 시작합니다.
+@RestController
+@RequestMapping("/api/auth")
 @RequiredArgsConstructor
 public class UserController {
 
@@ -37,5 +36,25 @@ public class UserController {
     public ResponseEntity<TokenResponse> login(@RequestBody LoginRequest request) {
         TokenResponse token = userService.login(request);
         return ResponseEntity.ok(token); // 200 OK와 함께 토큰 응답
+    }
+
+    /**
+     * 로그아웃 API
+     * (POST /api/auth/logout)
+     */
+    @PostMapping("/logout")
+    public ResponseEntity<String> logout(@RequestBody LogoutRequest request) {
+        userService.logout(request);
+        return ResponseEntity.ok("로그아웃 성공");
+    }
+
+    /**
+     * Access Token 갱신 API
+     * (POST /api/auth/refresh)
+     */
+    @PostMapping("/refresh")
+    public ResponseEntity<AccessTokenResponse> refresh(@RequestBody RefreshRequest request) {
+        AccessTokenResponse response = userService.reissueToken(request);
+        return ResponseEntity.ok(response);
     }
 }
