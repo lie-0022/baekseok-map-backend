@@ -21,6 +21,7 @@ Content-Type: application/json
 > {%
     client.global.set("myRefreshToken", response.body.refreshToken);
     client.global.set("myAccessToken", response.body.accessToken);
+    client.log("myAccessToken: " + client.global.get("myAccessToken"));
 %}
 
 ###
@@ -41,4 +42,21 @@ Content-Type: application/json
 
 {
   "refreshToken": "{{myRefreshToken}}"
+}
+
+###
+
+# 6. [JWT 필터 테스트] GET + 토큰 (CSRF 검사 없음)
+GET http://localhost:8080/api/test
+Authorization: Bearer {{myAccessToken}}
+
+###
+
+# 7. [CSRF 테스트] POST + 토큰 (CSRF 검사 있음)
+POST http://localhost:8080/api/favorites
+Content-Type: application/json
+Authorization: Bearer {{myAccessToken}}
+
+{
+  "roomId": 1
 }
