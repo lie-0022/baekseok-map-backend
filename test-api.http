@@ -60,3 +60,11 @@ Authorization: Bearer {{myAccessToken}}
 {
   "roomId": 1
 }
+
+###
+
+# 8. [성공 테스트] 즐겨찾기 목록 조회 API (인증 필요)
+#
+# 2번 로그인에서 발급받은 Access Token을 헤더에 추가해야 합니다.
+GET http://localhost:8080/api/favorites
+Authorization: Bearer {{myAccessToken}}

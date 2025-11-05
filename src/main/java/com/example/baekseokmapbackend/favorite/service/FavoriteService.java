@@ -2,6 +2,7 @@ package com.example.baekseokmapbackend.favorite.service;
 
 import com.example.baekseokmapbackend.favorite.domain.Favorite;
 import com.example.baekseokmapbackend.favorite.dto.FavoriteAddRequest;
+import com.example.baekseokmapbackend.favorite.dto.FavoriteResponse;
 import com.example.baekseokmapbackend.favorite.repository.FavoriteRepository;
 import com.example.baekseokmapbackend.map.domain.Room;
 import com.example.baekseokmapbackend.map.repository.RoomRepository;
@@ -12,6 +13,9 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+
+import java.util.List; // 1. List 임포트 추가
+import java.util.stream.Collectors; // 2. Collectors 임포트 추가
 
 @Service
 @RequiredArgsConstructor
@@ -50,5 +54,26 @@ public class FavoriteService {
         Favorite savedFavorite = favoriteRepository.save(newFavorite);
 
         return savedFavorite.getId();
+    }
+
+    /**
+     * 즐겨찾기 목록 조회 로직
+     */
+    public List<FavoriteResponse> getFavorites() {
+        // 1. 현재 인증된 사용자 정보 가져오기
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        String studentId = authentication.getName();
+
+        // 2. 사용자 엔티티 조회
+        User user = userRepository.findByStudentId(studentId)
+                .orElseThrow(() -> new IllegalArgumentException("사용자를 찾을 수 없습니다."));
+
+        // 3. 해당 사용자의 모든 즐겨찾기 목록을 DB에서 조회
+        List<Favorite> favorites = favoriteRepository.findAllByUser(user);
+
+        // 4. List<Favorite>를 List<FavoriteResponse>로 변환 (DTO 사용)
+        return favorites.stream()
+                .map(FavoriteResponse::new) // .map(favorite -> new FavoriteResponse(favorite))
+                .collect(Collectors.toList());
     }
 }
