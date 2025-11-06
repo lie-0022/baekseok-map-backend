@@ -10,10 +10,7 @@ import java.util.List;
 
 public interface ScheduleRepository extends JpaRepository<Schedule, Integer> {
 
-    /**
-     * 특정 요일과 시간대에 겹치는 강의실 ID 목록을 찾는 메소드
-     * '빈 강의실 찾기' 기능의 핵심입니다.
-     */
+
     @Query("SELECT s.room.id FROM Schedule s " +
             "WHERE s.dayOfWeek = :dayOfWeek " +
             "AND s.startTime < :endTime " +
