@@ -38,3 +38,4 @@ out/
 
 src/main/resources/application-dev.yml
 docker-compose.yml
+docker/mysql/init/**

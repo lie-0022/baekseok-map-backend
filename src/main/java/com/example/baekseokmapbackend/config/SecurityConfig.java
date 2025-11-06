@@ -41,6 +41,10 @@ public class SecurityConfig {
                 .authorizeHttpRequests(authz -> authz
                         .requestMatchers("/api/auth/**").permitAll()
                         .requestMatchers("/h2-console/**").permitAll()
+                        .requestMatchers("/api/buildings").permitAll()
+                        .requestMatchers("/api/buildings/*").permitAll()
+                        .requestMatchers("/api/floors/*/available-rooms").permitAll()
+                        .requestMatchers("/api/search").permitAll()
                         .anyRequest().authenticated()
                 )
                 .headers(headers ->
