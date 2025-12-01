@@ -31,7 +31,6 @@ public class FavoriteService {
      */
     @Transactional
     public Long addFavorite(FavoriteAddRequest request) {
-        // ... (이전과 동일) ...
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         String studentId = authentication.getName();
         User user = userRepository.findByStudentId(studentId)

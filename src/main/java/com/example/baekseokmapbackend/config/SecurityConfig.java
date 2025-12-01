@@ -49,6 +49,7 @@ public class SecurityConfig {
                         .requestMatchers("/api/buildings/**").permitAll()
                         .requestMatchers("/api/floors/*/available-rooms").permitAll()
                         .requestMatchers("/api/search").permitAll()
+                        .requestMatchers("/error").permitAll()
                         .anyRequest().authenticated()
                 )
                 .headers(headers ->
