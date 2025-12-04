@@ -77,8 +77,13 @@ public class UserService {
 
         refreshTokenRepository.save(refreshToken);
 
-        // 5. 토큰 반환
-        return new TokenResponse(accessToken, refreshTokenString);
+        // 5. 토큰 및 사용자 정보 반환 (수정됨)
+        return new TokenResponse(
+                accessToken,
+                refreshTokenString,
+                user.getStudentId(),
+                user.getNickname()
+        );
     }
 
     /**
