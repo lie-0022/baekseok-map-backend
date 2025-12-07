@@ -30,6 +30,8 @@ public class Building {
 
     private String description;
 
+    private String imageUrl;
+
     // Building이 Floor를 리스트로 가지고 있음 (1:N 관계)
     // 'mappedBy'는 Floor 엔티티에 있는 'building' 필드 이름을 가리킵니다.
     @OneToMany(mappedBy = "building")

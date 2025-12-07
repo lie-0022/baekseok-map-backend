@@ -13,6 +13,7 @@ public interface BuildingRepository extends JpaRepository<Building, Integer> {
     @Query("""
         select new com.example.baekseokmapbackend.map.dto.BuildingResponse(
             b.id, b.name, b.latitude, b.longitude
+            , b.imageUrl
         )
         from Building b
         order by lower(b.name) asc
@@ -22,6 +23,7 @@ public interface BuildingRepository extends JpaRepository<Building, Integer> {
     @Query("""
         select new com.example.baekseokmapbackend.map.dto.BuildingDetailResponse(
             b.id, b.name, b.latitude, b.longitude, b.description
+            , b.imageUrl
         )
         from Building b
         where b.id = :buildingId
